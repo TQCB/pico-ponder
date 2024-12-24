@@ -1,7 +1,6 @@
 import os
 import sys
 import numpy as np
-import pandas as pd
 
 from dotenv import load_dotenv; load_dotenv()
 import sys; sys.path.append(os.getenv('MP'))
