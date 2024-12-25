@@ -7,29 +7,10 @@ import sys; sys.path.append(os.getenv('MP'))
 
 import nn
 
-def sgen(filepath, sep='<|endoftext|>'):
-  """
-  A generator that yields sentences from a text file.
-
-  Args:
-    filepath: Path to text file
-    sep: Word that separates sentences
-  
-  Yields:
-    str: Sentences found in the file
-  """
-  with open(filepath, 'r', encoding='utf-8') as f:
-    current_sentence = ""
-    for line in f:
-      for word in line.split(): # split by spaces
-        if word == sep:
-          yield current_sentence.strip()
-          current_sentence = ""
-        else:
-          current_sentence += " " + word
-    # yield the last sentence, if not ending with sep.
-    if current_sentence.strip():
-      yield current_sentence.strip()
+def load_data(path):
+  with open(path, 'r') as f:
+    data = f.read()
+  return data
 
 def targets_from_sequence(sequence, context_size):
   """
@@ -81,35 +62,63 @@ def targets_from_sequences(sequences, context_size):
     result.append(targets_from_sequence(sequence, context_size))
   return np.vstack(result)
 
+def one_hot_encode(x, n_classes=None, dtype='int'):
+  if n_classes is None:
+    n_classes = np.max(x) # max class number found in array
+  return np.eye(n_classes, dtype=dtype)[x]
+
+def train_split(data, ratio, n_classes):
+    # Split x, y
+    x, y = data[:,:-1], data[:,-1]
+
+    # Split train, test
+    choice = np.random.choice(data.shape[0], size=int(ratio*data.shape[0]), replace=False)
+    idx = np.zeros(data.shape[0], dtype=bool)
+    idx[choice] = True
+
+    x_train, x_val = x[~idx], x[idx]
+    y_train, y_val = y[~idx], y[idx]
+
+    return x_train, x_val, y_train, y_val
+
 def main():
-  train_path = r"C:\Users\rapha\Documents\datasets\tiny_stories\TinyStoriesV2-GPT4-train.txt"
-  val_path = r"C:\Users\rapha\Documents\datasets\tiny_stories\TinyStoriesV2-GPT4-valid.txt"
+  batch_size = 4
+  vocab_size = 300
+  data_path = r"data/pico_stories.csv"
+
+  data = load_data(data_path)
 
   # Initialise tokeniser and vectoriser
-  tokenizer = nn.text.BytePairTokenizer(300)
-  vectorizer = nn.text.Vectorizer(300)
+  tokenizer = nn.text.BytePairTokenizer(vocab_size)
+  vectorizer = nn.text.Vectorizer(vocab_size)
 
   # Fit tokeniser
-  tokenizer.fit(sgen(val_path))
-
-  # Get train and val tokens
-  # train_tokens = tokenizer.transform(sgen(train_path))
-  val_tokens = tokenizer.transform(sgen(val_path))
-  v_fit_tokens = tokenizer.transform(sgen(val_path))
+  tokenizer.fit(data)
+  tokens = tokenizer.transform(data)
 
   # Fit vectoriser
-  vectorizer.fit(v_fit_tokens)
+  vectorizer.fit(tokens)
+  sequences = vectorizer.transform(tokens)
 
-  # Get train and val sequences
-  # train_sequences = vectorizer.transform(train_tokens)
-  val_sequences = vectorizer.transform(val_tokens)
+  # Get target sequences
+  data = targets_from_sequences(sequences, 64).astype(int)
 
-  # train_data = targets_from_sequences(train_sequences, 64)
-  val_data = targets_from_sequences(val_sequences, 64)
-  val_data = val_data.astype(int)
+  # Split and encode
+  x_train, x_val, y_train, y_val = train_split(data, 0.2)
+  y_train, y_val = one_hot_encode(y_train, n_classes=vocab_size), one_hot_encode(y_val, n_classes=vocab_size)
 
-  val_save_path = r"C:\Users\rapha\Documents\datasets\tiny_stories\val_target2.npy"
-  np.save(val_save_path, val_data)
+  # Batch data
+  from nn.data import batch
+  x_train = batch(x_train, batch_size)
+  y_train = batch(y_train, batch_size)
+  x_val = batch(x_val, batch_size)
+  y_val = batch(y_val, batch_size)
+
+  # Save data
+  np.save(x_train, r"data/x_train.npy")
+  np.save(y_train, r"data/y_train.npy")
+  np.save(x_val, r"data/x_val.npy")
+  np.save(y_val, r"data/y_val.npy")
 
 if __name__ == '__main__':
   main()
