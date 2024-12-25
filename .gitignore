@@ -3,3 +3,4 @@ colab_train.ipynb
 colab_preprocessing.py
 
 /checkpoints
+/data
