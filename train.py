@@ -6,14 +6,14 @@ import nn.layers as l
 import numpy as np
 
 def main():
-  x_train = np.load(os.getenv('DATAPATH') + r'\x_train')
-  y_train = np.load(os.getenv('DATAPATH') + r'\y_train')
-  x_val = np.load(os.getenv('DATAPATH') + r'\x_val')
-  y_val = np.load(os.getenv('DATAPATH') + r'\y_val')
+  x_train = np.load(r'data/x_train.npy')
+  y_train = np.load(r'data/y_train.npy')
+  x_val = np.load(r'data/x_val.npy')
+  y_val = np.load(r'data/y_val.npy')
 
   # Model config
   # Embed size must be able to be split across heads
-  output_size = 301
+  output_size = 300
   embed_size = 16
   seq_len = 64
   n_heads = 4
@@ -38,13 +38,14 @@ def main():
   model.add(l.Activation(nn.activations.Softmax))
 
   lr = nn.optimizers.LinearCycleSchedule(0.001, 0.1, 1000)
-  save_cb =  nn.callbacks.SaveOnProgressCallback(os.getenv('DATAPATH') + r'\model_checkpoints\first_run')
+  save_cb =  nn.callbacks.SaveOnProgressCallback(r'data/model_checkpoints\first_run')
 
   model.build(nn.losses.cce, nn.losses.d_cce, nn.metrics.categorical_accuracy, lr)
   model.fit(x_train, y_train,
             x_val=x_val, y_val=y_val,
             epochs=3,
-            callbacks=[save_cb])
+            callbacks=[save_cb],
+            batch_print_steps=50)
 
 if __name__ == '__main__':
   main()
