@@ -1,14 +1,12 @@
-import os
-import sys
-import numpy as np
-
 from dotenv import load_dotenv; load_dotenv()
-import sys; sys.path.append(os.getenv('MP'))
+import sys, os; sys.path.append(os.getenv('MP'))
 
+import numpy as np
+import pickle
 import nn
 
 def load_data(path):
-  with open(path, 'r', encoding='utf-8') as f:
+  with open(path, 'r') as f:
     data = f.read()
   return data
 
@@ -82,12 +80,15 @@ def train_split(data, ratio):
     return x_train, x_val, y_train, y_val
 
 def main():
-  batch_size = 4
-  vocab_size = 300
+  batch_size = 2
+  seq_len = 1
+  vocab_size = 32
   sep = '<|endoftext|>'
-  data_path = r"data/pico_stories.txt"
+  data_path = r"data/drseuss.txt"
 
   data = load_data(data_path)
+  data = data[:100]
+  data = data.lower()
   data = data.split(sep)
 
   # Initialise tokeniser and vectoriser
@@ -97,13 +98,29 @@ def main():
   # Fit tokeniser
   tokenizer.fit(data)
   tokens = tokenizer.transform(data)
+  tokens = [' '.join(seq).split() for seq in tokens] # for each sentence we remove empty strings and whitespace strings
 
   # Fit vectoriser
   vectorizer.fit(tokens)
   sequences = vectorizer.transform(tokens)
 
+  print("Tokens:")
+  print(tokenizer.merges)
+  print(tokens)
+  print()
+  print(sequences)
+  print()
+  print("Vectorizer vocab:")
+  print(vectorizer.vocabulary)
+  print()
+  print(f"IDX 0 Freq.: {len([s for s in sequences[0] if s == 0]) / len(sequences[0]) * 100:.1f}%")
+  # return
+
+  with open(r'data/word_processors.pkl', 'wb') as f:
+    pickle.dump((tokenizer, vectorizer), f)
+
   # Get target sequences
-  data = targets_from_sequences(sequences, 64).astype(int)
+  data = targets_from_sequences(sequences, seq_len).astype(int)
 
   # Split and encode
   x_train, x_val, y_train, y_val = train_split(data, 0.2)
