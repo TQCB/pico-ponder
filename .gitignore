@@ -1,6 +1,6 @@
 .env
 colab_train.ipynb
-colab_preprocessing.py
+project_log.md
 
 /checkpoints
 /data
