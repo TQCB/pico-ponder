@@ -6,7 +6,7 @@ import pickle
 import nn
 
 def load_data(path):
-  with open(path, 'r') as f:
+  with open(path, 'r', encoding='utf-8') as f:
     data = f.read()
   return data
 
@@ -81,13 +81,13 @@ def train_split(data, ratio):
 
 def main():
   batch_size = 2
-  seq_len = 1
-  vocab_size = 32
+  seq_len = 4
+  vocab_size = 64
   sep = '<|endoftext|>'
-  data_path = r"data/drseuss.txt"
+  data_path = r"data/synthetic.txt"
 
   data = load_data(data_path)
-  data = data[:100]
+  data = data[:1_000]
   data = data.lower()
   data = data.split(sep)
 
@@ -108,6 +108,7 @@ def main():
   print(tokenizer.merges)
   print(tokens)
   print()
+  print("Sequences:")
   print(sequences)
   print()
   print("Vectorizer vocab:")
