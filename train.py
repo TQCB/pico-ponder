@@ -24,24 +24,37 @@ def main():
   # Model definition
   model = nn.network.Network()
 
-  ffn = l.MetaLayer([
-    l.Dense2D(input_dim=embed_size, output_dim=embed_size),
-    l.Activation(nn.activations.Swish),
-    l.Dense2D(input_dim=embed_size, output_dim=embed_size),
-    l.Activation(nn.activations.Swish),
-  ], clip=1)
+  # THESE DON'T WORK BECAUSE THEY SHARE WEIGHTS!!!!!
+  # Need some sort of factory to generate these independently
 
-  transformer = l.MetaLayer([
-    l.MultiHeadSelfAttention(input_dim=embed_size, n_dim=embed_size, n_heads=n_heads),
-    l.LayerNormalisation(embed_size),
-    ffn,
-    l.LayerNormalisation(embed_size),
-  ], clip=1)
+  # ffn = l.MetaLayer([
+  #   l.Dense2D(input_dim=embed_size, output_dim=embed_size),
+  #   l.Activation(nn.activations.Swish),
+  #   l.Dense2D(input_dim=embed_size, output_dim=embed_size),
+  #   l.Activation(nn.activations.Swish),
+  # ], clip=1)
+
+  # transformer = l.MetaLayer([
+  #   l.MultiHeadSelfAttention(input_dim=embed_size, n_dim=embed_size, n_heads=n_heads),
+  #   l.LayerNormalisation(embed_size),
+  #   l.Dense2D(input_dim=embed_size, output_dim=embed_size),
+  #   l.Activation(nn.activations.Swish),
+  #   l.Dense2D(input_dim=embed_size, output_dim=embed_size),
+  #   l.Activation(nn.activations.Swish),
+  #   l.LayerNormalisation(embed_size),
+  # ], clip=1)
 
   model.add(l.PositionalEmbedding(seq_len=seq_len, output_dim=embed_size, vocab_size=output_size))
-  for i in range(n_transformers):
-    model.add(transformer)
+  
+  # transformer
+  model.add(l.MultiHeadSelfAttention(input_dim=embed_size, n_dim=embed_size, n_heads=n_heads))
   model.add(l.LayerNormalisation(embed_size))
+  model.add(l.Dense2D(input_dim=embed_size, output_dim=embed_size))
+  model.add(l.Activation(nn.activations.Swish))
+  model.add(l.Dense2D(input_dim=embed_size, output_dim=embed_size))
+  model.add(l.Activation(nn.activations.Swish))
+  model.add(l.LayerNormalisation(embed_size))
+
   model.add(l.MultiHeadSelfAttention(input_dim=embed_size, n_dim=embed_size, n_heads=n_heads, return_sequences=False))
   model.add(l.LayerNormalisation(embed_size))
   model.add(l.Dense1D(input_dim=embed_size, output_dim=output_size))
