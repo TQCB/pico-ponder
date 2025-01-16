@@ -80,19 +80,29 @@ def train_split(data, ratio):
     return x_train, x_val, y_train, y_val
 
 def main():
-  batch_size = 2
+  # If you want to see info on preprocessing
+  # Accepts verbosities of 0, 1, 2 for No output, Minimal output, Full output
+  verbosity = 2
+  
+  # Limit input data in case I want to test
+  char_limit = 0
+  
+  # Set preprocessing paramaters
+  batch_size = 4
   seq_len = 4
-  vocab_size = 64
-  sep = '<|endoftext|>'
+  bpe_target_size = 128 # target amount of bpe pairs to learn
+  vocab_size = 40
+  sep = '<|endoftext|>' # sometimes necessary if separating training inputs instead of training continously
   data_path = r"data/synthetic.txt"
 
   data = load_data(data_path)
-  data = data[:1_000]
+  if char_limit > 0:
+    data = data[:char_limit]
   data = data.lower()
   data = data.split(sep)
 
   # Initialise tokeniser and vectoriser
-  tokenizer = nn.text.BytePairTokenizer(vocab_size)
+  tokenizer = nn.text.BytePairTokenizer(bpe_target_size)
   vectorizer = nn.text.Vectorizer(vocab_size)
 
   # Fit tokeniser
@@ -104,18 +114,16 @@ def main():
   vectorizer.fit(tokens)
   sequences = vectorizer.transform(tokens)
 
-  print("Tokens:")
-  print(tokenizer.merges)
-  print(tokens)
-  print()
-  print("Sequences:")
-  print(sequences)
-  print()
-  print("Vectorizer vocab:")
-  print(vectorizer.vocabulary)
-  print()
-  print(f"IDX 0 Freq.: {len([s for s in sequences[0] if s == 0]) / len(sequences[0]) * 100:.1f}%")
-  # return
+  # Verbosity prints
+  if verbosity > 0:
+    if verbosity > 1:
+      # Print tokenizer, vocab and output info for eventual debugging
+      print(f"Tokens: {tokenizer.merges}\n{tokens}\n")
+      print(f"Sequences: {sequences}\n")
+      print(f"Vectorizer vocab: {vectorizer.vocabulary}\n")
+    
+    # Useful to see how much of your vocab is left out
+    print(f"Unknown Token Frequency: {len([s for s in sequences[0] if s == 0]) / len(sequences[0]) * 100:.1f}%\n")
 
   with open(r'data/word_processors.pkl', 'wb') as f:
     pickle.dump((tokenizer, vectorizer), f)
