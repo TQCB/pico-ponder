@@ -3,7 +3,7 @@ import sys, os; sys.path.append(os.getenv('MP'))
 
 import numpy as np
 import pickle
-import nn
+import femto_flow as ff
 
 def load_data(path):
   with open(path, 'r', encoding='utf-8') as f:
@@ -80,20 +80,30 @@ def train_split(data, ratio):
     return x_train, x_val, y_train, y_val
 
 def main():
-  batch_size = 2
-  seq_len = 4
-  vocab_size = 64
-  sep = '<|endoftext|>'
+  # If you want to see info on preprocessing
+  # Accepts verbosities of 0, 1, 2 for No output, Minimal output, Full output
+  verbosity = 2
+  
+  # Limit input data in case I want to test
+  char_limit = 10_000
+  
+  # Set preprocessing paramaters
+  batch_size = 16
+  seq_len = 2
+  bpe_target_size = 128 # target amount of bpe pairs to learn
+  vocab_size = 256
+  sep = '<|endoftext|>' # sometimes necessary if separating training inputs instead of training continously
   data_path = r"data/synthetic.txt"
 
   data = load_data(data_path)
-  data = data[:1_000]
+  if char_limit > 0:
+    data = data[:char_limit]
   data = data.lower()
   data = data.split(sep)
 
   # Initialise tokeniser and vectoriser
-  tokenizer = nn.text.BytePairTokenizer(vocab_size)
-  vectorizer = nn.text.Vectorizer(vocab_size)
+  tokenizer = ff.text.BytePairTokenizer(bpe_target_size)
+  vectorizer = ff.text.Vectorizer(vocab_size)
 
   # Fit tokeniser
   tokenizer.fit(data)
@@ -104,18 +114,16 @@ def main():
   vectorizer.fit(tokens)
   sequences = vectorizer.transform(tokens)
 
-  print("Tokens:")
-  print(tokenizer.merges)
-  print(tokens)
-  print()
-  print("Sequences:")
-  print(sequences)
-  print()
-  print("Vectorizer vocab:")
-  print(vectorizer.vocabulary)
-  print()
-  print(f"IDX 0 Freq.: {len([s for s in sequences[0] if s == 0]) / len(sequences[0]) * 100:.1f}%")
-  # return
+  # Verbosity prints
+  if verbosity > 0:
+    if verbosity > 1:
+      # Print tokenizer, vocab and output info for eventual debugging
+      print(f"Tokens: {tokenizer.merges}\n{tokens}\n")
+      print(f"Sequences: {sequences}\n")
+      print(f"Vectorizer vocab: {vectorizer.vocabulary}\n")
+    
+    # Useful to see how much of your vocab is left out
+    print(f"Unknown Token Frequency: {len([s for s in sequences[0] if s == 0]) / len(sequences[0]) * 100:.1f}%\n")
 
   with open(r'data/word_processors.pkl', 'wb') as f:
     pickle.dump((tokenizer, vectorizer), f)
@@ -129,11 +137,10 @@ def main():
   y_val = one_hot_encode(y_val, n_classes=vocab_size)
 
   # Batch data
-  from nn.data import batch
-  x_train = batch(x_train, batch_size)
-  y_train = batch(y_train, batch_size)
-  x_val = batch(x_val, batch_size)
-  y_val = batch(y_val, batch_size)
+  x_train = ff.data.batch(x_train, batch_size)
+  y_train = ff.data.batch(y_train, batch_size)
+  x_val = ff.data.batch(x_val, batch_size)
+  y_val = ff.data.batch(y_val, batch_size)
 
   # Save data
   np.save(r"data/x_train.npy", x_train)
