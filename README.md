@@ -17,3 +17,8 @@ https://arxiv.org/abs/2305.07759
       primaryClass={cs.CL},
       url={https://arxiv.org/abs/2305.07759}, 
 }
+
+Current demo ideas:
+- character generation
+- token generation
+- sentence reversal
