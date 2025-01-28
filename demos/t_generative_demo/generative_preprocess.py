@@ -6,8 +6,12 @@ import pickle
 import femto_flow as ff
 
 def load_data(path):
-  with open(path, 'r', encoding='utf-8') as f:
-    data = f.read()
+  if path == "data/drseuss.txt":
+    with open(path, 'r') as f:
+      data = f.read()
+  else:
+    with open(path, 'r', encoding='utf-8') as f:
+      data = f.read()
   return data
 
 def targets_from_sequence(sequence, context_size):
@@ -85,15 +89,15 @@ def main():
   verbosity = 2
   
   # Limit input data in case I want to test
-  char_limit = 10_000
+  char_limit = 0
   
   # Set preprocessing paramaters
   batch_size = 16
-  seq_len = 2
-  bpe_target_size = 128 # target amount of bpe pairs to learn
-  vocab_size = 256
+  seq_len = 4
+  bpe_target_size = 2 # target amount of bpe pairs to learn
+  vocab_size = 100
   sep = '<|endoftext|>' # sometimes necessary if separating training inputs instead of training continously
-  data_path = r"data/synthetic.txt"
+  data_path = r"data/drseuss.txt"
 
   data = load_data(data_path)
   if char_limit > 0:

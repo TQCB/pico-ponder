@@ -93,7 +93,7 @@ def main():
   
   # Set preprocessing paramaters
   batch_size = 8
-  seq_len = 16
+  seq_len = 32
   vocab_size = 64
   sep = '<|endoftext|>' # sometimes necessary if separating training inputs instead of training continously
   data_path = r"data/drseuss.txt"

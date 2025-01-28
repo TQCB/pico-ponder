@@ -16,9 +16,9 @@ def main():
   # Model config
   output_size = 64
   embed_size = 64
-  seq_len = 16
+  seq_len = 32
   n_heads = 4
-  n_transformers = 8
+  n_transformers = 4
   dropout_rate = 0.0
   
   # Embed size must be able to be split across heads
@@ -77,13 +77,13 @@ def main():
   print(f"Parameter count:   {model.param_count:,.0f}")
   
   lr_cb = ff.callbacks.PrintLRCallback()
-  save_cb =  ff.callbacks.SaveOnProgressCallback(r'checkpoints/char_gen')
+  # save_cb =  ff.callbacks.SaveOnProgressCallback(r'checkpoints/char_gen')
 
   model.fit(x_train, y_train,
             x_val=x_val, y_val=y_val,
             validation=True,
             epochs=epochs,
-            callbacks=[save_cb],
+            # callbacks=[save_cb],
             batch_print_steps=10)
 
   with open('checkpoints/history.txt', 'w') as f:
