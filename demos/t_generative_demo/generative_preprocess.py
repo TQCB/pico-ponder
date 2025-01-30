@@ -94,7 +94,7 @@ def main():
   # Set preprocessing paramaters
   batch_size = 16
   seq_len = 4
-  bpe_target_size = 2 # target amount of bpe pairs to learn
+  bpe_target_size = 50 # target amount of bpe pairs to learn
   vocab_size = 100
   sep = '<|endoftext|>' # sometimes necessary if separating training inputs instead of training continously
   data_path = r"data/drseuss.txt"
@@ -105,9 +105,16 @@ def main():
   data = data.lower()
   data = data.split(sep)
 
+  # We create a base vocabulary consisting of all english letters so our
+  # vectorizer will be to vectorize most words, despite basic english letters
+  # not being that common alone. We pass start_value=1 to leave space for the
+  # <UNK> token at vector position 0
+  base_alphabet = list('abcdefghijklmnopqrstuvwxyz')
+  base_vocab = ff.text.list_to_dict(base_alphabet, start_value=1)
+
   # Initialise tokeniser and vectoriser
   tokenizer = ff.text.BytePairTokenizer(bpe_target_size)
-  vectorizer = ff.text.Vectorizer(vocab_size)
+  vectorizer = ff.text.Vectorizer(vocab_size, vocabulary=base_vocab)
 
   # Fit tokeniser
   tokenizer.fit(data)
@@ -122,8 +129,9 @@ def main():
   if verbosity > 0:
     if verbosity > 1:
       # Print tokenizer, vocab and output info for eventual debugging
-      print(f"Tokens: {tokenizer.merges}\n{tokens}\n")
-      print(f"Sequences: {sequences}\n")
+      print(f"Tokenizer merges: {tokenizer.merges}\n")
+      print(f"Tokens: {tokens[0][:100]}")
+      print(f"Sequences: {sequences[0][:100]}\n")
       print(f"Vectorizer vocab: {vectorizer.vocabulary}\n")
     
     # Useful to see how much of your vocab is left out

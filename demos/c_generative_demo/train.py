@@ -6,30 +6,30 @@ import femto_flow.layers as l
 import numpy as np
 
 def main():
-  x_train = np.load(r'data/x_train.npy')
-  y_train = np.load(r'data/y_train.npy')
-  x_val = np.load(r'data/x_val.npy')
-  y_val = np.load(r'data/y_val.npy')
+  x_train = np.load(r'demos/c_generative_demo/data/x_train.npy')
+  y_train = np.load(r'demos/c_generative_demo/data/y_train.npy')
+  x_val = np.load(r'demos/c_generative_demo/data/x_val.npy')
+  y_val = np.load(r'demos/c_generative_demo/data/y_val.npy')
 
   ##### MODEL DEFINITION #####
 
   # Model config
   output_size = 64
-  embed_size = 64
-  seq_len = 32
+  embed_size = 128
+  seq_len = 8
   n_heads = 4
-  n_transformers = 4
+  n_transformers = 3
   dropout_rate = 0.0
   
   # Embed size must be able to be split across heads
   assert embed_size % n_heads == 0, "Embed size cannot be split across attention heads."
   
   # Training config
-  epochs = 20
+  epochs = 50
 
   decay = False
-  max_lr = 1e-3
-  min_lr = 1e-5
+  max_lr = 1e-4
+  min_lr = 1e-4
   decay_rate = (min_lr/max_lr) ** (1/epochs) # decay rate to achieve min_lr from max_lr over n epochs
 
   # Model definition
@@ -64,7 +64,7 @@ def main():
     print(f"Epoch LR decay rate: {decay_rate:.3f}")
 
   else:
-    lr = ff.optimizers.LearningRateSchedule(max_lr)
+    lr = ff.optimizers.LearningRateSchedule(1e-3)
 
   opt = ff.optimizers.AdamOptimizer
   
@@ -77,16 +77,16 @@ def main():
   print(f"Parameter count:   {model.param_count:,.0f}")
   
   lr_cb = ff.callbacks.PrintLRCallback()
-  # save_cb =  ff.callbacks.SaveOnProgressCallback(r'checkpoints/char_gen')
+  save_cb =  ff.callbacks.SaveOnProgressCallback(r'demos/c_generative_demo/checkpoints')
 
   model.fit(x_train, y_train,
             x_val=x_val, y_val=y_val,
             validation=True,
             epochs=epochs,
-            # callbacks=[save_cb],
+            callbacks=[save_cb],
             batch_print_steps=10)
 
-  with open('checkpoints/history.txt', 'w') as f:
+  with open('demos/c_generative_demo/checkpoints/history.txt', 'w') as f:
     f.write(str(model.history))
 
 if __name__ == '__main__':
