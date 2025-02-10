@@ -40,13 +40,14 @@ def train_test_split(x, y, ratio):
     return x_train, x_val, y_train, y_val
 
 def main():
-  vocab_size = 1000
-  seq_len = 32
-  verbosity = 1
-  batch_size = 32
+  vocab_size = 100
+  seq_len = 128
+  verbosity = 2
+  batch_size = 16
 
   df = pd.read_csv(r"demos/classification_demo/data/tweet_emotions.csv")
   df = df.drop('tweet_id', axis=1)
+  # df = df[:10000]
 
   ##### Encode sentiment column #####
   df = encode(df, 'sentiment')
@@ -56,8 +57,10 @@ def main():
   print(f"Corpus length: {len(corpus)}") if verbosity > 1 else None
 
   ##### Tokenize and vectorize text content #####
+  base_alphabet = list('abcdefghijklmnopqrstuvwxyz')
+  base_vocab = ff.text.list_to_dict(base_alphabet, start_value=1)
   tokenizer = ff.text.BytePairTokenizer(vocab_size)
-  vectorizer = ff.text.Vectorizer(vocab_size)
+  vectorizer = ff.text.Vectorizer(vocab_size, vocabulary=base_vocab)
 
   tokenizer.fit(corpus)
   df['tokens'] = df['content'].apply(lambda x: tokenizer.transform([x]))
@@ -76,13 +79,13 @@ def main():
   df['vectors'] = df['vectors'].apply(lambda x: pad_or_slice(x, seq_len))
 
   # Add all elements of vector column to array
-  x = np.empty((df.shape[0], seq_len))
+  x = np.empty((df.shape[0], seq_len), dtype=int)
   for i in range(df.shape[0]):
     x[i] = df.loc[i, 'vectors']
 
   # Creating y from one hot encoded sentiment information
   n_cat = df['sentiment'].nunique()
-  y = np.empty((df.shape[0], n_cat))
+  y = np.empty((df.shape[0], n_cat), dtype=int)
   for i in range(df.shape[0]):
     oh_vec = np.zeros(n_cat)
     oh_vec[df.loc[i, 'sentiment']] = 1

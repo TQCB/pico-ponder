@@ -14,19 +14,19 @@ def main():
   ##### MODEL DEFINITION #####
 
   # Model config
-  vocab_size = 1000
+  vocab_size = 100
   output_size = 13
-  embed_size = 32
-  seq_len = 32
-  n_heads = 1
+  embed_size = 64
+  seq_len = 128
+  n_heads = 4
   n_transformers = 3
-  dropout_rate = 0.0
+  dropout_rate = 0.1
   
   # Embed size must be able to be split across heads
   assert embed_size % n_heads == 0, "Embed size cannot be split across attention heads."
   
   # Training config
-  epochs = 10
+  epochs = 20
   lr = 1e-3
 
   # Model definition
@@ -50,15 +50,15 @@ def main():
     model.add(create_transformer())
   model.add(l.MultiHeadSelfAttention(input_dim=embed_size, n_dim=embed_size, n_heads=n_heads, return_sequences=False))
   model.add(l.LayerNormalisation(embed_size))
-  model.add(l.Dense1D(input_dim=embed_size, output_dim=output_size))
-  model.add(l.Activation(ff.activations.Softmax))
+  model.add(l.Dense1D(input_dim=embed_size, output_dim=1))
+  model.add(l.Activation(ff.activations.TanH))
 
   lrs = ff.optimizers.LearningRateSchedule(lr)
 
   opt = ff.optimizers.AdamOptimizer
   
-  model.build(ff.losses.cce, ff.losses.d_cce,
-              ff.metrics.categorical_accuracy,
+  model.build(ff.losses.bce, ff.losses.d_bce,
+              ff.metrics.binary_accuracy,
               optimizer=opt, 
               learning_rate_schedule=lrs,)
 
@@ -71,11 +71,12 @@ def main():
             x_val=x_val, y_val=y_val,
             validation=True,
             epochs=epochs,
-            # callbacks=[save_cb],
-            batch_print_steps=10)
+            train_steps=50, val_steps=50,
+            callbacks=[save_cb],
+            batch_print_steps=1)
 
-  # with open('demos/classification_demo/checkpoints/history.txt', 'w') as f:
-  #   f.write(str(model.history))
+  with open('demos/classification_demo/checkpoints/history.txt', 'w') as f:
+    f.write(str(model.history))
 
 if __name__ == '__main__':
   main()
